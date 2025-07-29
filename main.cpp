@@ -151,10 +151,11 @@ void InitializeGame()
     g_gameData.flagged = std::vector<std::vector<bool>>(BOARD_SIZE, std::vector<bool>(BOARD_SIZE, false));
     g_gameData.revealedCount = 0;
     
-    // Clear all buttons
+    // Clear all buttons and re-enable them
     for (int i = 0; i < BOARD_SIZE; i++) {
         for (int j = 0; j < BOARD_SIZE; j++) {
             SetWindowText(g_gameData.gameButtons[i][j], "");
+            EnableWindow(g_gameData.gameButtons[i][j], TRUE);
         }
     }
     
@@ -209,6 +210,9 @@ void RevealCell(int row, int col)
     g_gameData.revealed[row][col] = true;
     g_gameData.revealedCount++;
     
+    // Disable the button to prevent further clicks
+    EnableWindow(g_gameData.gameButtons[row][col], FALSE);
+    
     if (g_gameData.board[row][col] == -1) {
         // Hit a mine
         SetWindowText(g_gameData.gameButtons[row][col], "💣");
@@ -241,12 +245,14 @@ void GameOver(bool won)
 {
     g_gameData.state = won ? GAME_OVER_WIN : GAME_OVER_LOSE;
     
-    // Reveal all mines
+    // Reveal all mines and disable all buttons
     for (int i = 0; i < BOARD_SIZE; i++) {
         for (int j = 0; j < BOARD_SIZE; j++) {
             if (g_gameData.board[i][j] == -1) {
                 SetWindowText(g_gameData.gameButtons[i][j], "💣");
             }
+            // Disable all buttons to prevent further interaction
+            EnableWindow(g_gameData.gameButtons[i][j], FALSE);
         }
     }
     
