@@ -117,7 +117,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         if (!g_gameData.revealed[row][col]) {
                             g_gameData.flagged[row][col] = !g_gameData.flagged[row][col];
                             SetWindowText(g_gameData.gameButtons[row][col], 
-                                        g_gameData.flagged[row][col] ? "🚩" : "");
+                                        g_gameData.flagged[row][col] ? "F" : "");
                         }
                     }
                     // Left click to reveal
@@ -215,7 +215,7 @@ void RevealCell(int row, int col)
     
     if (g_gameData.board[row][col] == -1) {
         // Hit a mine
-        SetWindowText(g_gameData.gameButtons[row][col], "💣");
+        SetWindowText(g_gameData.gameButtons[row][col], "*");
         GameOver(false);
         return;
     }
@@ -249,7 +249,7 @@ void GameOver(bool won)
     for (int i = 0; i < BOARD_SIZE; i++) {
         for (int j = 0; j < BOARD_SIZE; j++) {
             if (g_gameData.board[i][j] == -1) {
-                SetWindowText(g_gameData.gameButtons[i][j], "💣");
+                SetWindowText(g_gameData.gameButtons[i][j], "*");
             }
             // Disable all buttons to prevent further interaction
             EnableWindow(g_gameData.gameButtons[i][j], FALSE);
