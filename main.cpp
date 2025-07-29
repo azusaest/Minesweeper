@@ -34,11 +34,12 @@ struct GameData {
     HWND hStartButton;
     HWND hRestartButton;
     std::vector<std::vector<HWND>> gameButtons;
+    HBRUSH hRevealedBrush; // Brush for revealed cells
     
     GameData() : board(BOARD_SIZE, std::vector<int>(BOARD_SIZE, 0)),
                  revealed(BOARD_SIZE, std::vector<bool>(BOARD_SIZE, false)),
                  flagged(BOARD_SIZE, std::vector<bool>(BOARD_SIZE, false)),
-                 state(MENU), revealedCount(0) {}
+                 state(MENU), revealedCount(0), hRevealedBrush(NULL) {}
 };
 
 GameData g_gameData;
@@ -60,6 +61,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         case WM_CREATE:
         {
+            // Create brush for revealed cells (dark gray)
+            g_gameData.hRevealedBrush = CreateSolidBrush(RGB(128, 128, 128));
+            
             // Create start button
             g_gameData.hStartButton = CreateWindow(
                 "BUTTON", "Start Game",
@@ -131,10 +135,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
         }
         
+        case WM_CTLCOLORBTN:
+        {
+            HDC hdcButton = (HDC)wParam;
+            HWND hButton = (HWND)lParam;
+            
+            // Check if this button is a game button and if it's revealed
+            for (int i = 0; i < BOARD_SIZE; i++) {
+                for (int j = 0; j < BOARD_SIZE; j++) {
+                    if (g_gameData.gameButtons[i][j] == hButton && g_gameData.revealed[i][j]) {
+                        // Set text color to black for better contrast
+                        SetTextColor(hdcButton, RGB(0, 0, 0));
+                        SetBkColor(hdcButton, RGB(128, 128, 128));
+                        return (LRESULT)g_gameData.hRevealedBrush;
+                    }
+                }
+            }
+            break;
+        }
+        
         case WM_CLOSE:
             DestroyWindow(hwnd);
             break;
         case WM_DESTROY:
+            // Clean up resources
+            if (g_gameData.hRevealedBrush) {
+                DeleteObject(g_gameData.hRevealedBrush);
+            }
             PostQuitMessage(0);
             break;
         default:
@@ -156,6 +183,8 @@ void InitializeGame()
         for (int j = 0; j < BOARD_SIZE; j++) {
             SetWindowText(g_gameData.gameButtons[i][j], "");
             EnableWindow(g_gameData.gameButtons[i][j], TRUE);
+            // Force button to repaint with default color
+            InvalidateRect(g_gameData.gameButtons[i][j], NULL, TRUE);
         }
     }
     
@@ -213,6 +242,9 @@ void RevealCell(int row, int col)
     // Disable the button to prevent further clicks
     EnableWindow(g_gameData.gameButtons[row][col], FALSE);
     
+    // Force button to repaint with new color
+    InvalidateRect(g_gameData.gameButtons[row][col], NULL, TRUE);
+    
     if (g_gameData.board[row][col] == -1) {
         // Hit a mine
         SetWindowText(g_gameData.gameButtons[row][col], "💣");
@@ -253,6 +285,8 @@ void GameOver(bool won)
             }
             // Disable all buttons to prevent further interaction
             EnableWindow(g_gameData.gameButtons[i][j], FALSE);
+            // Force button to repaint with correct color
+            InvalidateRect(g_gameData.gameButtons[i][j], NULL, TRUE);
         }
     }
     
