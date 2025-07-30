@@ -118,9 +118,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                             g_gameData.flagged[row][col] = !g_gameData.flagged[row][col];
                             SetWindowText(g_gameData.gameButtons[row][col], 
                                         g_gameData.flagged[row][col] ? "F" : "");
-                            // Set checked state for flagged buttons
-                            SendMessage(g_gameData.gameButtons[row][col], BM_SETCHECK, 
-                                      g_gameData.flagged[row][col] ? BST_CHECKED : BST_UNCHECKED, 0);
                         }
                     }
                     // Left click to reveal
@@ -218,6 +215,9 @@ void RevealCell(int row, int col)
     
     // Set button to checked state to show it has been revealed
     SendMessage(g_gameData.gameButtons[row][col], BM_SETCHECK, BST_CHECKED, 0);
+    
+    // Disable the button to prevent further clicking once revealed
+    EnableWindow(g_gameData.gameButtons[row][col], FALSE);
     
     if (g_gameData.board[row][col] == -1) {
         // Hit a mine
