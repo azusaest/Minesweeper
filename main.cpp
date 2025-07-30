@@ -14,8 +14,20 @@ const char g_szClassName[] = "myWindowClass";
 const int BOARD_SIZE = 10;
 const int MINES_COUNT = 10;
 const int CELL_SIZE = 30;
-const int BOARD_OFFSET_X = 50;
-const int BOARD_OFFSET_Y = 100;
+const int WINDOW_WIDTH = 400;
+const int WINDOW_HEIGHT = 500;
+const int BUTTON_WIDTH = 100;
+const int BUTTON_HEIGHT = 30;
+
+// Calculate centered positions
+const int BOARD_WIDTH = BOARD_SIZE * CELL_SIZE;
+const int BOARD_HEIGHT = BOARD_SIZE * CELL_SIZE;
+const int BOARD_OFFSET_X = (WINDOW_WIDTH - BOARD_WIDTH) / 2;
+const int BOARD_OFFSET_Y = (WINDOW_HEIGHT - BOARD_HEIGHT) / 2 + 40; // Slightly below center
+const int START_BUTTON_X = (WINDOW_WIDTH - BUTTON_WIDTH) / 2;
+const int START_BUTTON_Y = (WINDOW_HEIGHT - BUTTON_HEIGHT) / 2;
+const int RESTART_BUTTON_X = (WINDOW_WIDTH - BUTTON_WIDTH) / 2;
+const int RESTART_BUTTON_Y = BOARD_OFFSET_Y - 50; // Above the game board
 
 // Game state
 enum GameState {
@@ -53,6 +65,7 @@ void ShowGameBoard();
 void HideGameBoard();
 void ShowMenu();
 void ShowRestartButton();
+void RepositionElements(HWND hwnd);
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -60,18 +73,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         case WM_CREATE:
         {
-            // Create start button
+            // Create start button (centered in window)
             g_gameData.hStartButton = CreateWindow(
                 "BUTTON", "Start Game",
                 WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-                100, 100, 100, 30,
+                START_BUTTON_X, START_BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT,
                 hwnd, (HMENU)(UINT_PTR)ID_BUTTON_START, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
             
-            // Create restart button (initially hidden)
+            // Create restart button (initially hidden, positioned above game board)
             g_gameData.hRestartButton = CreateWindow(
                 "BUTTON", "Restart",
                 WS_TABSTOP | WS_CHILD | BS_DEFPUSHBUTTON,
-                100, 100, 100, 30,
+                RESTART_BUTTON_X, RESTART_BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT,
                 hwnd, (HMENU)(UINT_PTR)ID_BUTTON_RESTART, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
             
             // Initialize game buttons grid
@@ -87,6 +100,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         ((LPCREATESTRUCT)lParam)->hInstance, NULL);
                 }
             }
+            break;
+        }
+        
+        case WM_SIZE:
+        {
+            // Reposition elements when window is resized
+            RepositionElements(hwnd);
             break;
         }
         
@@ -305,6 +325,40 @@ void ShowRestartButton()
     ShowWindow(g_gameData.hRestartButton, SW_SHOW);
 }
 
+void RepositionElements(HWND hwnd)
+{
+    RECT clientRect;
+    GetClientRect(hwnd, &clientRect);
+    
+    int clientWidth = clientRect.right - clientRect.left;
+    int clientHeight = clientRect.bottom - clientRect.top;
+    
+    // Calculate new positions based on current client area
+    int boardOffsetX = (clientWidth - BOARD_WIDTH) / 2;
+    int boardOffsetY = (clientHeight - BOARD_HEIGHT) / 2 + 40; // Slightly below center
+    int startButtonX = (clientWidth - BUTTON_WIDTH) / 2;
+    int startButtonY = (clientHeight - BUTTON_HEIGHT) / 2;
+    int restartButtonX = (clientWidth - BUTTON_WIDTH) / 2;
+    int restartButtonY = boardOffsetY - 50; // Above the game board
+    
+    // Reposition start button
+    SetWindowPos(g_gameData.hStartButton, NULL, startButtonX, startButtonY, 0, 0, 
+                 SWP_NOSIZE | SWP_NOZORDER);
+    
+    // Reposition restart button
+    SetWindowPos(g_gameData.hRestartButton, NULL, restartButtonX, restartButtonY, 0, 0, 
+                 SWP_NOSIZE | SWP_NOZORDER);
+    
+    // Reposition game board buttons
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        for (int j = 0; j < BOARD_SIZE; j++) {
+            SetWindowPos(g_gameData.gameButtons[i][j], NULL, 
+                        boardOffsetX + j * CELL_SIZE, boardOffsetY + i * CELL_SIZE, 
+                        0, 0, SWP_NOSIZE | SWP_NOZORDER);
+        }
+    }
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     WNDCLASSEX wc = {0};
@@ -332,7 +386,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         g_szClassName,
         "Minesweeper",
         WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, 400, 500,
+        CW_USEDEFAULT, CW_USEDEFAULT, WINDOW_WIDTH, WINDOW_HEIGHT,
         NULL, NULL, hInstance, NULL);
 
     if(hwnd == NULL)
