@@ -101,10 +101,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 ShowWindow(g_gameData.hStartButton, SW_HIDE);
             }
             else if (wmId == ID_BUTTON_RESTART) {
-                g_gameData.state = MENU;
-                ShowMenu();
-                HideGameBoard();
-                ShowWindow(g_gameData.hRestartButton, SW_HIDE);
+                InitializeGame();
+                g_gameData.state = PLAYING;
+                // Keep the game board visible and restart button available
+                // No need to hide/show anything, just restart the game
             }
             else if (wmId >= ID_BUTTON_GAME_BASE && wmId < ID_BUTTON_GAME_BASE + BOARD_SIZE * BOARD_SIZE) {
                 if (g_gameData.state == PLAYING) {
